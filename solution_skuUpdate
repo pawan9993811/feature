@@ -1,0 +1,139 @@
+@functionaltest
+@servicetest
+Feature: DDPDWS-2294 : solution svc (/solutionsvc/api/v1/providers/{uid}/skus/{sku) POST
+
+  Background:
+    * call read('classpath:features/common/generic_functions.feature')
+    * def sqlInjection = '\'; select * from ordersubscription ; \''
+    * def xmlInjection = '<script>alert(1)</script>'
+    * def jwtToken = call read('classpath:features/common/coreTokenGen.feature@createCoreToken')
+    * def jwtExpiredDFToken = jwtToken.coreExpiredJwtToken
+    * def jwtInvalidDFToken = jwtToken.coreInvalidJwtToken
+  
+   # Set test data to be set in request body
+   * set payloadData
+   | path                 | 0               |
+   | name                 | randomAlpha(5)  |
+   | companyName          | randomAlpha(10) |
+   | onboardingServiceUri | randomAlpha(20) |
+
+ * table inputValsTable
+   | payload        | status |
+   | payloadData[0] | 200    |
+ * json solutionPostResponse = call read('classpath:features/solutionPortalSvc/common/solution_common_Post_skuUpdate.feature@postNewSolution') inputValsTable
+ * def solutionPostuid = solutionPostResponse[0].response.uid
+ * print solutionPostuid
+      
+
+    * set prepayload
+      |    path              |        0           |
+      |    sku               |randomAlphaNum(8)   |
+      | shortDescription     | randomAlpha(8)  |
+      | longDescription      | randomAlpha(22)  |
+    
+    * table inputValsTable
+      | onepayload        | status |   uid           |
+      | prepayload[0]     | 200    | solutionPostuid |
+    * json skuSolutionResponse = call read('classpath:features/solutionPortalSvc/common/solution_common_Post_skuUpdate.feature@skupostNewSolution') inputValsTable
+    * def skuVal = randomAlphaNum(8) 
+    * print skuVal 
+
+
+    # GET API setup
+    # Set test data to be set in request URL
+    * table getinputValsTable
+      | uid             | status |
+      | solutionPostuid | 200    |
+    * json skuSolutionResponse = call read('classpath:features/solutionPortalSvc/common/solution_common_Post_skuUpdate.feature@getsku') getinputValsTable
+    * def Getsku = skuSolutionResponse[0].response[0].sku
+    * print Getsku
+        
+
+    # Scenario Outline: <jira> : DDPDWS-2294 : Solution Service V2 - (/solutionsvc/api/v1/providers/{uid}/skus/{sku}) POST Returns 200 response
+    # # Set test data to be set in request body
+    # * set tabpayloadData
+    #   | path                 | 0                  |
+    #   | shortDescription     | <shortDescription> |
+    #   | longDescription      | <longDescription>  |
+    #  * table inputValsTable
+    #   |   skupayload        |  status   |      uid      |      sku      |
+    #   |  tabpayloadData[0]  |  200      |solutionPostuid|     Getsku    |
+    # * json solutionPostResponse = call read('classpath:features/solutionPortalSvc/common/solution_common_Post_skuUpdate.feature@postNewSolutionsku') inputValsTable
+    # Examples:
+    #   | jira        |shortDescription   | longDescription     |
+    #   | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8)   |
+    #   | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8)   |
+    #   | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8)   |
+
+
+
+
+  # Scenario Outline: <jira> : DDPDWS-2294 : Solution Service V2 - (/solutionsvc/api/v1/providers/{uid}/skus/{sku}) POST Returns 400 response
+  # out put {"errors":{"Sku":["The Sku field is required."]}
+  #     # POST Seats API setup
+  #     # Set test data to be set in request URL
+  #     * set addSeatsRequest 
+  #       | path             |  0                    | 
+  #       | shortDescription |  <shortDescription>   |
+  #       | longDescription  |  <longDescription>    | 
+      
+  #     * table invalidInputValsTable
+  #       | unauthotable       |      uid        | status |  sku |
+  #       | addSeatsRequest[0] | solutionPostuid | 400    |Getsku|
+  #     * json postResponse = call read('classpath:features/solutionPortalSvc/common/solution_common_Post_skuUpdate.feature@sol1invalidPostAddRemoveSeats') invalidInputValsTable
+  #     * def expectedresponse = postResponse[0].response.uid
+  #    # * match expectedresponse == <responseMessage>
+  #     Examples:
+  #      | jira        | shortDescription   | longDescription     |
+  #      | DDPDWS-2294 | randomAlphaNum(8)  | randomAlphaNum(8)   |
+  #      | DDPDWS-2294 | randomAlphaNum(8)  | randomAlphaNum(8)   |
+  #      | DDPDWS-2294 | randomAlphaNum(8)  | randomAlphaNum(8)   |
+       
+
+
+# Scenario Outline: <jira> : DDPDWS-2294 : Solution Service V2 - (/solutionsvc/api/v1/providers/{uid}/skus/{sku}) POST Returns 401 response
+#        # Set test data to be set in request body
+#        # this table is nt getting to access
+#      * set unauthorisedpayload
+#        | path                 | 0                   |
+#        | shortDescription     | <shortDescription>  |
+#        | longDescription      | <longDescription>   |
+      
+#      * table unauthorisedinputValsTable
+#        | skuPayload             | status | uid             | JWTToken |sku   |
+#        | unauthorisedpayload[0] | 401    | solutionPostuid | <Token>  |Getsku|
+#      * json solutionordersPostResponse = call read('classpath:features/solutionPortalSvc/common/solution_common_post.feature@skuunauthorizedPostOrder') unauthorisedinputValsTable
+
+#      Examples:
+#        | jira        | shortDescription  |   longDescription | Token             |
+#        | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) | jwtInvalidDFToken |
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) | randomAlphaNum(8)  | jwtExpiredCertToken|
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) | randomAlphaNum(512)|jwtExpiredDFToken   |
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) |  randomAlphaNum(8) |jwtInvalidDFToken   |
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) |  randomAlphaNum(8) | jwtExpiredCertToken|
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) |  randomAlphaNum(3) | jwtExpiredDFToken  |
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) |  randomAlphaNum(8) | jwtInvalidDFToken  |
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) |  randomAlphaNum(8) |jwtExpiredCertToken |
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) |  randomAlphaNum(8) |jwtExpiredDFToken   |
+        # | DDPDWS-2294 | randomAlphaNum(8) |randomAlphaNum(8)  | randomAlphaNum(8)  | jwtInvalidDFToken  |
+        # | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) | randomAlphaNum(8)  |jwtExpiredCertToken |
+
+   
+
+      # Scenario Outline: <jira> : DDPDWS-2294 : Solution Service V2 - (/solutionsvc/api/v1/providers/{uid}/skus/{sku})) POST Returns 404 response
+
+      #          # POST Seats API setup
+      #          # Set test data to be set in request URL
+      #      * set unauthotable
+      #        | path                 | 0                  |
+      #        | shortDescription     | <shortDescription> |
+      #        | longDescription      | <longDescription>  |
+            
+      #      * table TableRandomSid
+      #        | seatskupayload  | status | uid             | sku  |
+      #        | unauthotable[0] | 404    | solutionPostuid |Getsku|
+      #      * json solutionpostSeatsResponse = call read('classpath:features/solutionPortalSvc/common/solution_common_post.feature@skusolutioninvalidPostAddons') TableRandomSid
+      #      Examples:
+      #        | jira        | shortDescription  | longDescription   |
+      #        | DDPDWS-2294 | randomAlphaNum(8) | randomAlphaNum(8) |
+          
